@@ -29,7 +29,7 @@ ventana.setup(610, 610)
 ventana.tracer(0)
 
 # Crear todas las pelotas de la animación
-pelotas = [turtle.Turtle() for _ in range(40)]
+pelotas = [turtle.Turtle() for _ in range(25)]
 
 # Configurar las características de cada pelota
 for pelota in pelotas:
