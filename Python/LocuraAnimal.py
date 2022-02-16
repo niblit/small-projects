@@ -120,6 +120,8 @@ def obtener_vocablo(lista_animales):
             for segunda in combinations(lista_filtrada[1], 4 if de_quien_se_escogen_4 == 1 else 3):
                 for tercera in combinations(lista_filtrada[2], 4 if de_quien_se_escogen_4 == 2 else 3):
                     vocablo = primera + segunda + tercera
+                    vocablo = list(vocablo)
+                    vocablo.sort()
                     yield "".join(vocablo)
 
 
