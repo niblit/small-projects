@@ -1,6 +1,6 @@
-import concurrent.futures
 from itertools import combinations
-from concurrent.futures import ProcessPoolExecutor
+from pprint import pprint
+
 """
 EJERCICIO
 Con la “tabla de poder” analizado, del conjunto de 4 animales seleccionados, el 
@@ -46,7 +46,19 @@ animales = [
     "antilope",
     "leopardo"
 ]
-animales4 = list(combinations(animales, 4))
+
+# sobreescribe aquí animales para solo calcular ciertas combinaciones, mira el ejemplo
+animales4 = [
+    ("tiburon", "zorrillo", "mandril", "albatro"),
+    ("quetzal", "albatro", "mandril", "murcielago"),
+    ("tiburon", "albatro", "ornitorrinco", "hormiga"),
+    ("ornitorrinco", "zarigueya", "barracuda", "elefante"),
+    ("tiburon", "albatro", "murcielago", "jilguero"),
+
+]
+
+# o puedes generar todas las posibilidades
+# animales4 = list(combinations(animales, 4))
 
 letras_valores = {
     "a": 10,
@@ -79,33 +91,23 @@ letras_valores = {
 
 
 def main():
-    with ProcessPoolExecutor() as ppe:
-        results = [ppe.submit(process, a4) for a4 in animales4]
+    for animales4_elemento in animales4:
+        vocablos = []
 
-        for result in concurrent.futures.as_completed(results):
-            print(result.result())
+        for vocablo in obtener_vocablo(animales4_elemento):
+            if revisar_vocablo(vocablo):
+                vocablos.append(vocablo)
 
+        resultados = elegir_vocablos(vocablos)
 
-def process(cuatro_animales):
-    vocablos = []
-
-    for vocablo in obtener_vocablo(cuatro_animales):
-        if revisar_vocablo(vocablo):
-            vocablos.append(vocablo)
-
-    resultados = elegir_vocablos(vocablos)
-
-    mensaje = ""
-
-    mensaje += "\n" + f"Para los cuatro animales: {' '.join(cuatro_animales)}"
-    if len(resultados) == 0:
-        mensaje += "\n" + "No se encontró ningún vocablo"
-    elif len(resultados) == 1:
-        mensaje += "\n" + f"El mejor vocablo es: {resultados}"
-    else:
-        mensaje += "\n" + f"Los mejores vocablos son:\n {' - '.join(resultados)}"
-
-    return mensaje
+        print(f"Para los cuatro animales: {' '.join(animales4_elemento)}")
+        if len(resultados) == 0:
+            print("\tNo se encontró ningún vocablo")
+        elif len(resultados) == 1:
+            print(f"\tEl mejor vocablo es: {resultados}")
+        else:
+            print(f"\tLos mejores vocablos son:")
+            pprint(resultados)
 
 
 def obtener_vocablo(lista_animales):
@@ -167,31 +169,48 @@ def revisar_vocablo(vocablo):
 
 
 def elegir_vocablos(lista_vocablos):
-    menores_promedios = [("", 100)]
-    mayores_dsm = [("", 0)]
+    menores_promedios = [("", 100, 0)]
+    mayores_dsm = [("", 0, 100)]
+
     for vocablo in lista_vocablos:
         puntos = []
         for letra in vocablo:
             puntos.append(letras_valores[letra])
         puntos.sort()
-        promedio = sum(puntos) / len(puntos)
-        if promedio < menores_promedios[0][1]:
-            menores_promedios = [(vocablo, promedio)]
-        elif promedio == menores_promedios[0][1]:
-            menores_promedios.append((vocablo, promedio))
 
-        des_std_mues = (sum((x - promedio)**2 for x in puntos)) / (len(puntos) - 1)**0.5
+        promedio = sum(puntos) / len(puntos)
+        des_std_mues = (sum((x - promedio)**2 for x in puntos) / (len(puntos) - 1))**0.5
+
+        if promedio < menores_promedios[0][1]:
+            menores_promedios = [(vocablo, promedio, des_std_mues)]
+        elif promedio == menores_promedios[0][1]:
+            menores_promedios.append((vocablo, promedio, des_std_mues))
+
         if des_std_mues > mayores_dsm[0][1]:
-            mayores_dsm = [(vocablo, des_std_mues)]
+            mayores_dsm = [(vocablo, des_std_mues, promedio)]
         elif des_std_mues == mayores_dsm[0][1]:
-            mayores_dsm.append((vocablo, des_std_mues))
+            mayores_dsm.append((vocablo, des_std_mues, promedio))
+
+    menores_promedios_mayores_dsm = [("", 100, 0)]
+    for elemento in menores_promedios:
+        if elemento[2] > menores_promedios_mayores_dsm[0][2]:
+            menores_promedios_mayores_dsm = [elemento]
+        elif elemento[2] == menores_promedios_mayores_dsm[0][2]:
+            menores_promedios_mayores_dsm.append(elemento)
+
+    mayores_dsm_menores_promedios = [("", 0, 100)]
+    for elemento in mayores_dsm:
+        if elemento[2] < mayores_dsm_menores_promedios[0][2]:
+            mayores_dsm_menores_promedios = [elemento]
+        elif elemento[2] == mayores_dsm_menores_promedios[0][2]:
+            mayores_dsm_menores_promedios.append(elemento)
 
     resultados = []
 
-    for a in menores_promedios:
-        resultados.append(a[0])
-    for a in mayores_dsm:
-        resultados.append(a[0])
+    for a in menores_promedios_mayores_dsm:
+        resultados.append(a[0] + f" promedio {a[1]:.2f}" + f" dsm {a[2]:.2f}")
+    for a in mayores_dsm_menores_promedios:
+        resultados.append(a[0] + f" promedio {a[2]:.2f}" + f" dsm {a[1]:.2f}")
 
     resultados = list(set(resultados))
     return resultados
