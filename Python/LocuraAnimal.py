@@ -1,5 +1,6 @@
+import concurrent.futures
 from itertools import combinations
-
+from concurrent.futures import ProcessPoolExecutor
 """
 EJERCICIO
 Con la “tabla de poder” analizado, del conjunto de 4 animales seleccionados, el 
@@ -78,24 +79,33 @@ letras_valores = {
 
 
 def main():
-    la4 = len(animales4)
-    for i, animales4_elemento in enumerate(animales4):
-        print(f"Procesando {i + 1} de {la4}...", end="\r")
-        vocablos = []
+    with ProcessPoolExecutor() as ppe:
+        results = [ppe.submit(process, a4) for a4 in animales4]
 
-        for vocablo in obtener_vocablo(animales4_elemento):
-            if revisar_vocablo(vocablo):
-                vocablos.append(vocablo)
+        for result in concurrent.futures.as_completed(results):
+            print(result.result())
 
-        resultados = elegir_vocablos(vocablos)
 
-        print(f"Para los cuatro animales: {' '.join(animales4_elemento)}")
-        if len(resultados) == 0:
-            print("No se encontró ningún vocablo")
-        elif len(resultados) == 1:
-            print(f"El mejor vocablo es: {resultados}")
-        else:
-            print(f"Los mejores vocablos son:\n {' - '.join(resultados)}")
+def process(cuatro_animales):
+    vocablos = []
+
+    for vocablo in obtener_vocablo(cuatro_animales):
+        if revisar_vocablo(vocablo):
+            vocablos.append(vocablo)
+
+    resultados = elegir_vocablos(vocablos)
+
+    mensaje = ""
+
+    mensaje += "\n" + f"Para los cuatro animales: {' '.join(cuatro_animales)}"
+    if len(resultados) == 0:
+        mensaje += "\n" + "No se encontró ningún vocablo"
+    elif len(resultados) == 1:
+        mensaje += "\n" + f"El mejor vocablo es: {resultados}"
+    else:
+        mensaje += "\n" + f"Los mejores vocablos son:\n {' - '.join(resultados)}"
+
+    return mensaje
 
 
 def obtener_vocablo(lista_animales):
